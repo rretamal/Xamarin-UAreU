@@ -12,6 +12,9 @@ namespace DigitalPersona
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
+        TextView lblStatus;
+        Button btnSelect;
+        Button btnDetect;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -21,6 +24,21 @@ namespace DigitalPersona
 
             Android.Support.V7.Widget.Toolbar toolbar = FindViewById<Android.Support.V7.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
+
+            lblStatus = FindViewById<TextView>(Resource.Id.lblStatus);
+            btnSelect = FindViewById<Button>(Resource.Id.btnSelect);
+            btnDetect = FindViewById<Button>(Resource.Id.btnDetect);
+
+            var devices = FingerprintTools.CheckDevices(this);
+
+            if (devices.Count > 0)
+            {
+                lblStatus.Text = "Please select a device to read";
+                btnSelect.Visibility = ViewStates.Visible;
+                btnDetect.Visibility = ViewStates.Visible;
+            }
+            else { 
+            }
 
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;

@@ -1,0 +1,11 @@
+﻿<metadata>
+  <!--
+  This sample removes the class: android.support.v4.content.AsyncTaskLoader.LoadTask:
+  <remove-node path="/api/package[@name='android.support.v4.content']/class[@name='AsyncTaskLoader.LoadTask']" />
+  
+  This sample removes the method: android.support.v4.content.CursorLoader.loadInBackground:
+  <remove-node path="/api/package[@name='android.support.v4.content']/class[@name='CursorLoader']/method[@name='loadInBackground']" />
+  -->
+  <attr path="/api/package[@name='com.digitalpersona.uareu.dpfpdd']/class[@name='ReaderCollectionImpl']/method[@name='get' and count(parameter)=1 and parameter[1][@type='int']]" name="managedType">int</attr>
+  <attr path="/api/package[@name='com.digitalpersona.uareu.dpfpdd']/class[@name='ReaderCollectionImpl']/method[@name='get' and count(parameter)=1 and parameter[1][@type='int']]" name="managedReturn">Java.Lang.Object</attr>
+</metadata>

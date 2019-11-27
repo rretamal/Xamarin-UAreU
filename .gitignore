@@ -1,3 +1,7 @@
 .vs/
 DigitalPersona/bin/
 DigitalPersona/obj/
+DigitalPersona.Reader/bin/
+DigitalPersona.Reader/obj/
+DigitalPersona.Reader/Jars/
+DigitalPersona.Reader/lib/

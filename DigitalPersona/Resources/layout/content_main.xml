@@ -8,9 +8,27 @@
     tools:showIn="@layout/activity_main">
 
     <TextView
+        android:id="@+id/lblStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:textAlignment="center"
+        android:text="No fingerprint device detected!" android:layout_marginTop="5dp" />
+    <Button
+        android:text="Select Device"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="Hello World!" />
-
+        android:layout_below="@id/lblStatus"
+        android:layout_centerHorizontal="true"
+        android:visibility="invisible"
+        android:id="@+id/btnSelect" />
+    <Button
+        android:text="Detect fingerprint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnSelect"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/btnDetect" 
+        android:visibility="invisible"
+    />
 </RelativeLayout>
