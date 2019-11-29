@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,15 +21,18 @@ namespace DigitalPersona
 {
     public class FingerprintTools
     {
-        private static String ACTION_USB_PERMISSION = "ksec.access.Droid.USB_PERMISSION";
+        private static String ACTION_USB_PERMISSION = "com.digitalpersona.test.USB_PERMISSION";
         UsbDevice device;
         public static Activity _activity;
+        UsbReciever usbReceiver;
 
-        public static List<string> CheckDevices(Activity activity)
+        // Events
+        public event EventHandler DevicesDetected;
+        public event EventHandler<byte[]> FingerprintDetected;
+
+        public void Init(Activity activity)
         {
-            var data = new List<string>();
-
-            try
+            try 
             {
                 _activity = activity;
 
@@ -45,6 +49,59 @@ namespace DigitalPersona
                 Java.Lang.JavaSystem.LoadLibrary("nex_sdk");
                 Java.Lang.JavaSystem.LoadLibrary("tfm");
 
+                UsbManager manager = (UsbManager)activity.GetSystemService(Context.UsbService);
+
+                usbReceiver = new UsbReciever(this);
+                PendingIntent mPermissionIntent = PendingIntent.GetBroadcast(activity, 0, new Intent(
+                    ACTION_USB_PERMISSION), 0);
+                IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+                activity.RegisterReceiver(usbReceiver, filter);
+
+                //if (DPFPDDUsbHost.DPFPDDUsbCheckAndRequestPermissions(activity, mPermissionIntent, "Fingerprint reader"))
+                //{
+                //    CheckDevices();
+                //}
+            }
+            catch (Exception ex)
+            { 
+            }
+        }
+
+        public List<string> CheckDevices()
+        {
+            var data = new List<string>();
+
+            try
+            {
+                var readers = UareUGlobal.GetReaderCollection(Android.App.Application.Context);
+                readers.GetReaders();
+
+                if (readers.Size() > 1)
+                {
+                    DevicesDetected?.Invoke(this, null);
+                }
+                else
+                {
+                    var reader = readers.Get(0).JavaCast<IReader>();
+
+                    if (reader != null)
+                    {
+                        InitDevice(reader);
+                    }                    
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+
+            return data;
+        }
+
+        public List<string> GetReaders() {
+            var data = new List<string>();
+
+            try
+            {
                 var readers = UareUGlobal.GetReaderCollection(Android.App.Application.Context);
                 readers.GetReaders();
 
@@ -54,18 +111,7 @@ namespace DigitalPersona
 
                     if (reader != null)
                     {
-                        UsbManager manager = (UsbManager)activity.GetSystemService(Context.UsbService);
-
-                        UsbReciever usbReciever = new UsbReciever();
-                        PendingIntent mPermissionIntent = PendingIntent.GetBroadcast(activity, 0, new Intent(
-                            ACTION_USB_PERMISSION), 0);
-                        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-                        activity.RegisterReceiver(usbReciever, filter);
-
-                        if (DPFPDDUsbHost.DPFPDDUsbCheckAndRequestPermissions(activity, mPermissionIntent, reader.Description.Name))
-                        {
-                            data.Add(reader.Description.Name);
-                        }
+                        data.Add(reader.Description.Name);
                     }
                 }
             }
@@ -76,19 +122,20 @@ namespace DigitalPersona
             return data;
         }
 
-        private static bool wasInit = false;
+        private bool wasInit = false;
 
-        public static void GetDevices()
+        public void InitDevice(string name)
         {
-            try { 
+            PendingIntent mPermissionIntent = PendingIntent.GetBroadcast(_activity, 0, new Intent(
+                    ACTION_USB_PERMISSION), 0);
 
-            }
-            catch (Exception ex)
-            { 
+            if (DPFPDDUsbHost.DPFPDDUsbCheckAndRequestPermissions(_activity, mPermissionIntent, name))
+            {
+                CheckDevices();
             }
         }
 
-        public static void InitDevice(IReader reader)
+        public void InitDevice(IReader reader)
         {
             if (reader != null)
             {
@@ -120,7 +167,7 @@ namespace DigitalPersona
             }
         }
 
-        private static void ReadFingerprint(IReader reader, int dpi)
+        private void ReadFingerprint(IReader reader, int dpi)
         {
             var t = Task.Run(async () =>
             {
@@ -140,14 +187,21 @@ namespace DigitalPersona
                             {
                                 var view = cap_result.Image.GetViews()[0];
                                 var result = cap_result.Quality;
-
+                               
                                 if (view != null)
                                 {
                                     var data = view.GetImageData();
 
-                                    var baseImg = BitConverter.ToString(data);
+                                    var bitmap = GetBitmapFromRaw(data, view.Width, view.Height);
 
-                                    var worker = await FindWorker(cap_result.Image);
+                                    var stream = new MemoryStream();
+                                    bitmap.Compress(Bitmap.CompressFormat.Jpeg, 0, stream);
+                                    byte[] bitmapData = stream.ToArray();
+
+                                    var img = Convert.ToBase64String(bitmapData);
+
+                                    FingerprintDetected?.Invoke(this, bitmapData);
+                                    //var worker = await FindWorker(cap_result.Image);
                                 }
                             }
                         }
@@ -181,7 +235,7 @@ namespace DigitalPersona
             return "";
         }
 
-        private static bool CompareFingers(string baseFingerprint, IFid currentFingerprint)
+        private bool CompareFingers(string baseFingerprint, IFid currentFingerprint)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -199,7 +253,7 @@ namespace DigitalPersona
 
             // Huella actual
             var frm2 = engine.CreateFmd(currentFingerprint, FmdFormat.Ansi3782004);
-
+           
             var score = engine.Compare(frm1, 0, frm2, 0);
 
             stopwatch.Stop();
@@ -219,7 +273,7 @@ namespace DigitalPersona
             return false;
         }
 
-        private static int GetFirstDPI(IReader reader)
+        private int GetFirstDPI(IReader reader)
         {
             if (reader != null)
             {
@@ -311,6 +365,13 @@ namespace DigitalPersona
 
     public class UsbReciever : BroadcastReceiver
     {
+        FingerprintTools activity;
+
+        public UsbReciever(FingerprintTools tools)
+        {
+            activity = tools;
+        }
+
         private static String ACTION_USB_PERMISSION = "com.digitalpersona.test.USB_PERMISSION";
 
         public override void OnReceive(Context context, Intent intent)
@@ -328,7 +389,7 @@ namespace DigitalPersona
                     {
                         if (device != null)
                         {
-                            FingerprintTools.CheckDevices(FingerprintTools._activity);
+                            activity.CheckDevices();
                         }
                     }
                     else
