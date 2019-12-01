@@ -15,11 +15,11 @@ namespace DigitalPersona
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme.NoActionBar", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
-        TextView lblStatus;
-        Button btnSelect;
-        Button btnDetect;
+        Button btnEnrollment;
+        Button btnVerification;
+        Button btnIdentification;
         FingerprintTools fingerprintTools;
-        ImageView imgFingerprint;
+        //ImageView imgFingerprint;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -30,10 +30,23 @@ namespace DigitalPersona
             Android.Support.V7.Widget.Toolbar toolbar = FindViewById<Android.Support.V7.Widget.Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
 
-            lblStatus = FindViewById<TextView>(Resource.Id.lblStatus);
-            btnSelect = FindViewById<Button>(Resource.Id.btnSelect);
-            btnDetect = FindViewById<Button>(Resource.Id.btnDetect);
-            imgFingerprint = FindViewById<ImageView>(Resource.Id.imgFingerprint);
+            btnEnrollment = FindViewById<Button>(Resource.Id.btnEnrollment);
+            btnVerification = FindViewById<Button>(Resource.Id.btnVerification);
+            btnIdentification = FindViewById<Button>(Resource.Id.btnIdentification);
+
+            btnEnrollment.Click += delegate {
+                
+            };
+
+            btnVerification.Click += delegate {
+
+            };
+
+            btnIdentification.Click += delegate {
+
+            };
+
+            //imgFingerprint = FindViewById<ImageView>(Resource.Id.imgFingerprint);
 
             fingerprintTools = new FingerprintTools();
             fingerprintTools.DevicesDetected += FingerprintTools_DevicesDetected;
@@ -43,16 +56,16 @@ namespace DigitalPersona
 
             if (devices.Count > 0)
             {
-                if (devices.Count == 1)
-                {
-                    lblStatus.Text = "Device selected: " + devices[0];
-                    fingerprintTools.InitDevice(devices[0]);
-                }
-                else {
-                    lblStatus.Text = "Please select a device to read";
-                    btnSelect.Visibility = ViewStates.Visible;
-                    btnDetect.Visibility = ViewStates.Visible;
-                }
+                //if (devices.Count == 1)
+                //{
+                //    lblStatus.Text = "Device selected: " + devices[0];
+                //    fingerprintTools.InitDevice(devices[0]);
+                //}
+                //else {
+                //    lblStatus.Text = "Please select a device to read";
+                //    btnSelect.Visibility = ViewStates.Visible;
+                //    btnDetect.Visibility = ViewStates.Visible;
+                //}
             }
 
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
@@ -65,7 +78,7 @@ namespace DigitalPersona
             {
                 Bitmap bitmap = BitmapFactory.DecodeByteArray(e, 0, e.Length);
                 
-                imgFingerprint.SetImageBitmap(bitmap);
+                //imgFingerprint.SetImageBitmap(bitmap);
             });
         }
 

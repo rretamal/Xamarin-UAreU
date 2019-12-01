@@ -1,45 +1,42 @@
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:showIn="@layout/activity_main">
-
+    tools:showIn="@layout/activity_main"
+    android:orientation="vertical" android:gravity="center_vertical">
     <TextView
-        android:id="@+id/lblStatus"
+        android:text="Please select an option to test your reader"
+        android:textAppearance="?android:attr/textAppearanceMedium"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:textAlignment="center"
-        android:text="No fingerprint device detected!" android:layout_marginTop="5dp" />
-    <Button
-        android:text="Select Device"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/lblStatus"
-        android:layout_centerHorizontal="true"
-        android:visibility="invisible"
-        android:id="@+id/btnSelect" />
-    <Button
-        android:text="Detect fingerprint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btnSelect"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/btnDetect" 
-        android:visibility="invisible"
-    />
-    <ImageView
-        android:src="@mipmap/ic_launcher_round"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btnDetect"
-        android:id="@+id/imgFingerprint"
-        android:layout_gravity="center_horizontal"
-        android:layout_centerInParent="true"
-    />
+        android:id="@+id/textView1" />
 
+    <Button
+        android:text="Enrollment"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/btnEnrollment" 
+        android:layout_gravity="center_horizontal"/>
+    <Button
+        android:text="Verification"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnEnrollment"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/btnVerification"  
+        android:layout_gravity="center_horizontal"/>
+        <Button
+        android:text="Identification"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnVerification"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/btnIdentification"  
+        android:layout_gravity="center_horizontal"/>
 
-    </RelativeLayout>
+    </LinearLayout>
