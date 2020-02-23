@@ -35,27 +35,27 @@ namespace DigitalPersona
             btnIdentification = FindViewById<Button>(Resource.Id.btnIdentification);
 
             btnEnrollment.Click += delegate {
-                
+                StartActivity(typeof(EnrollmentActivity));
             };
 
             btnVerification.Click += delegate {
-
+                StartActivity(typeof(VerificationActivity));
             };
 
             btnIdentification.Click += delegate {
-
+                StartActivity(typeof(IdentificationActivity));
             };
 
             //imgFingerprint = FindViewById<ImageView>(Resource.Id.imgFingerprint);
 
-            fingerprintTools = new FingerprintTools();
-            fingerprintTools.DevicesDetected += FingerprintTools_DevicesDetected;
-            fingerprintTools.FingerprintDetected += FingerprintTools_FingerprintDetected;
-            fingerprintTools.Init(this);
-            var devices = fingerprintTools.GetReaders();
+            //fingerprintTools = new FingerprintTools();
+            //fingerprintTools.DevicesDetected += FingerprintTools_DevicesDetected;
+            //fingerprintTools.FingerprintDetected += FingerprintTools_FingerprintDetected;
+            //fingerprintTools.Init(this);
+            //var devices = fingerprintTools.GetReaders();
 
-            if (devices.Count > 0)
-            {
+            //if (devices.Count > 0)
+            //{
                 //if (devices.Count == 1)
                 //{
                 //    lblStatus.Text = "Device selected: " + devices[0];
@@ -66,7 +66,7 @@ namespace DigitalPersona
                 //    btnSelect.Visibility = ViewStates.Visible;
                 //    btnDetect.Visibility = ViewStates.Visible;
                 //}
-            }
+            //}
 
             FloatingActionButton fab = FindViewById<FloatingActionButton>(Resource.Id.fab);
             fab.Click += FabOnClick;

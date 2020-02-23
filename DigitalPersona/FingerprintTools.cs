@@ -15,7 +15,6 @@ using Android.Views;
 using Android.Widget;
 using Com.Digitalpersona.Uareu;
 using Com.Digitalpersona.Uareu.Dpfpddusbhost;
-using Java.Nio;
 
 namespace DigitalPersona
 {
@@ -29,6 +28,10 @@ namespace DigitalPersona
         // Events
         public event EventHandler DevicesDetected;
         public event EventHandler<byte[]> FingerprintDetected;
+
+        public static IReader reader;
+        public static bool mReset;
+        public static int fmdsCount;
 
         public void Init(Activity activity)
         {
@@ -57,6 +60,9 @@ namespace DigitalPersona
                 IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
                 activity.RegisterReceiver(usbReceiver, filter);
 
+                CheckDevices();
+                //var readers = GetReaders();
+
                 //if (DPFPDDUsbHost.DPFPDDUsbCheckAndRequestPermissions(activity, mPermissionIntent, "Fingerprint reader"))
                 //{
                 //    CheckDevices();
@@ -76,19 +82,21 @@ namespace DigitalPersona
                 var readers = UareUGlobal.GetReaderCollection(Android.App.Application.Context);
                 readers.GetReaders();
 
-                if (readers.Size() > 1)
-                {
+                if (readers.Size() > 0)
                     DevicesDetected?.Invoke(this, null);
-                }
-                else
-                {
-                    var reader = readers.Get(0).JavaCast<IReader>();
+                //if (readers.Size() > 1)
+                //{
+                    
+                //}
+                //else
+                //{
+                //    var reader = readers.Get(0).JavaCast<IReader>();
 
-                    if (reader != null)
-                    {
-                        InitDevice(reader);
-                    }                    
-                }
+                //    if (reader != null)
+                //    {
+                //        InitDevice(reader);
+                //    }                    
+                //}
             }
             catch (Exception ex)
             {
@@ -107,7 +115,7 @@ namespace DigitalPersona
 
                 if (readers.Size() > 0)
                 {
-                    var reader = readers.Get(0).JavaCast<IReader>();
+                    IReader reader = readers.Get(0).JavaCast<IReader>();
 
                     if (reader != null)
                     {
@@ -124,18 +132,32 @@ namespace DigitalPersona
 
         private bool wasInit = false;
 
-        public void InitDevice(string name)
+        public void InitDevice(string name, bool listenFingerprint = true)
         {
-            PendingIntent mPermissionIntent = PendingIntent.GetBroadcast(_activity, 0, new Intent(
+            var readers = UareUGlobal.GetReaderCollection(Android.App.Application.Context);
+            readers.GetReaders();
+
+            if (readers.Size() > 0)
+            {
+                reader = readers.Get(0).JavaCast<IReader>();
+
+                if (reader != null)
+                {
+                    if (name == reader.Description.Name)
+                    {
+                        PendingIntent mPermissionIntent = PendingIntent.GetBroadcast(_activity, 0, new Intent(
                     ACTION_USB_PERMISSION), 0);
 
-            if (DPFPDDUsbHost.DPFPDDUsbCheckAndRequestPermissions(_activity, mPermissionIntent, name))
-            {
-                CheckDevices();
+                        if (DPFPDDUsbHost.DPFPDDUsbCheckAndRequestPermissions(_activity, mPermissionIntent, name))
+                        {
+                            InitDevice(reader, listenFingerprint);
+                        }
+                    }
+                }
             }
         }
 
-        public void InitDevice(IReader reader)
+        public void InitDevice(IReader reader, bool listenFingerprint = true)
         {
             if (reader != null)
             {
@@ -163,7 +185,8 @@ namespace DigitalPersona
 
                 var dpi = GetFirstDPI(reader);
 
-                ReadFingerprint(reader, dpi);
+                if(listenFingerprint)
+                    ReadFingerprint(reader, dpi);
             }
         }
 
@@ -185,6 +208,7 @@ namespace DigitalPersona
 
                             if (cap_result.Image != null)
                             {
+                                
                                 var view = cap_result.Image.GetViews()[0];
                                 var result = cap_result.Quality;
                                
@@ -240,7 +264,7 @@ namespace DigitalPersona
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             var engine = UareUGlobal.Engine;
-
+            
             String[] arr = baseFingerprint.Split('-');
             byte[] bytes = new byte[arr.Length];
             for (int i = 0; i < arr.Length; i++) bytes[i] = Convert.ToByte(arr[i], 16);
@@ -250,7 +274,7 @@ namespace DigitalPersona
                 currentFingerprint.GetViews()[0].Width,
                 currentFingerprint.GetViews()[0].Height,
                 508, 1, currentFingerprint.CbeffId, FmdFormat.Ansi3782004);
-
+            
             // Huella actual
             var frm2 = engine.CreateFmd(currentFingerprint, FmdFormat.Ansi3782004);
            
@@ -299,6 +323,8 @@ namespace DigitalPersona
         private static int m_cacheSize = 2;
         private static Bitmap m_lastBitmap;
         private static byte[] previousTest;
+        public static IFmd enrollmentFmd;
+        private bool mSuccess;
 
         private static Android.Graphics.Bitmap GetBitmapFromRaw(byte[] src, int width, int height)
         {
@@ -332,7 +358,7 @@ namespace DigitalPersona
                 }
                 m_cacheIndex = (m_cacheIndex + 1) % m_cacheSize;
 
-                bitmap.CopyPixelsFromBuffer(ByteBuffer.Wrap(bits));
+                bitmap.CopyPixelsFromBuffer(Java.Nio.ByteBuffer.Wrap(bits));
 
                 // save bitmap to history to be restored when screen orientation changes
                 m_lastBitmap = bitmap;
@@ -360,6 +386,25 @@ namespace DigitalPersona
             paint.SetColorFilter(f);
             c.DrawBitmap(bmpOriginal, 0, 0, paint);
             return bmpGrayscale;
+        }
+
+        public void StartEnrollment()
+        {
+            var engine = UareUGlobal.Engine;
+            var callback = new EnrollmentCallback(engine, reader);
+
+            if (mSuccess = (enrollmentFmd != null))
+            {
+                try
+                {
+                    enrollmentFmd = engine.CreateEnrollmentFmd(FmdFormat.Ansi3782004, callback);
+
+
+                }
+                catch (Exception ex)
+                { 
+                }
+            }
         }
     }
 
@@ -398,6 +443,102 @@ namespace DigitalPersona
                     }
                 }
             }
+        }
+    }
+
+    public class EnrollmentCallback : IEngineEnrollmentCallback
+    {
+        IEngine _engine;
+        IReader _reader;
+
+        public EnrollmentCallback(IEngine engine, IReader reader)
+        {
+            _engine = engine;
+            _reader = reader;
+        }
+
+        public IntPtr Handle => throw new NotImplementedException();
+
+        public int JniIdentityHashCode => throw new NotImplementedException();
+
+        public Java.Interop.JniObjectReference PeerReference => throw new NotImplementedException();
+
+        public Java.Interop.JniPeerMembers JniPeerMembers => throw new NotImplementedException();
+
+        public Java.Interop.JniManagedPeerStates JniManagedPeerState => throw new NotImplementedException();
+
+        public void Dispose()
+        {
+        }
+
+        public void Disposed()
+        {
+        }
+
+        public void DisposeUnlessReferenced()
+        {
+        }
+
+        public void Finalized()
+        {
+        }
+
+        public EnginePreEnrollmentFmd GetFmd(FmdFormat p0)
+        {
+            Com.Digitalpersona.Uareu.EnginePreEnrollmentFmd result = null;
+
+            try
+            {
+                while (FingerprintTools.mReset)
+                {
+                    try
+                    {
+                        var cap_result = _reader.Capture(FidFormat.Ansi3812004, ReaderImageProcessing.ImgProcDefault, dpi, -1);
+
+                        if (cap_result == null || cap_result.Image == null) continue;
+
+                        var preFmd = new Com.Digitalpersona.Uareu.EnginePreEnrollmentFmd();
+                        preFmd.Fmd = _engine.CreateFmd(cap_result.Image, FmdFormat.Ansi3782004);
+                        preFmd.ViewIndex = 0;
+
+                        FingerprintTools.fmdsCount++;
+
+                        result = preFmd;
+
+                        break;
+                    }
+                    catch (Exception ex)
+                    { 
+                    }
+                }
+
+
+                if (FingerprintTools.enrollmentFmd != null || FingerprintTools.fmdsCount == 0)
+                {
+                    // TODO: levantar evento de enrolado
+                }
+            }
+            catch (Exception ex)
+            { 
+            }
+
+            return result;
+        }
+
+        public void SetJniIdentityHashCode(int value)
+        {
+        }
+
+        public void SetJniManagedPeerState(Java.Interop.JniManagedPeerStates value)
+        {
+        }
+
+        public void SetPeerReference(Java.Interop.JniObjectReference reference)
+        {
+        }
+
+        public void UnregisterFromRuntime()
+        {
         }
     }
 }
